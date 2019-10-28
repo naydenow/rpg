@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
+    <meta name="theme-color" content="#000000">
+    <title>Shake And Catch</title>
+
+    <script id="vertexShaderterrain" type="x-shader/x-vertex">
+precision highp float;
+precision highp int;
+
+attribute vec2 uv;
+attribute vec3 position;
+
+uniform mat4 modelViewMatrix; // optional
+uniform mat4 projectionMatrix; // optional
+uniform mat4 modelMatrix;
+uniform mat3 normalMatrix;
+uniform mat4 viewMatrix;
+
+uniform sampler2D bumpTexture;
+uniform sampler2D bumpTexture1;
+uniform float bumpScale;
+
+varying vec4 vPos;
+varying vec3 vNormal;
+varying vec2 vUV;
+
+varying vec4 blend;
+
+void main(){
+	vUV = uv;
+	vPos = vec4( position , 1.0 );
+
+    blend = texture2D( bumpTexture1, vUV );
+
+    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+}
+
+
+
+
+
+    </script>
+
+    <script id="fragmentShaderterrain" type="x-shader/x-vertex">
+precision highp float;
+precision highp int;
+
+#define LOG2 1.442695
+#define whiteCompliment(a) ( 1.0 - saturate( a ) )
+#define saturate(a) clamp( a, 0.0, 1.0 )
+
+uniform sampler2D t1;
+uniform sampler2D t2;
+uniform sampler2D t3;
+uniform sampler2D t4;
+uniform sampler2D bumpTexture1;
+uniform mat4 modelMatrix;
+
+varying vec4 blend;
+varying vec2 vUV;
+varying vec4 vPos;
+varying vec3 vNormal;
+
+void main() {
+	vec3 texture1 = texture2D( t1, vUV*50.0).rgb;
+	vec3 texture2 = texture2D( t2, vUV*50.0).rgb;
+	vec3 texture3 = texture2D( t3, vUV*50.0).rgb;
+	vec3 texture4 = texture2D( t4, vUV*50.0).rgb;
+
+	vec3 map = texture1 * blend.r +  texture2 * blend.g + texture3 * blend.b + texture4 * (1.0-blend.a);
+
+    gl_FragColor = vec4(map  , 1.0);
+}
+
+
+
+
+
+    </script>
+</head>
+<body>
+<noscript>You need to enable JavaScript to run this app.</noscript>
+
+</body>
+</html>
+
+
+<style>
+    body {
+        color: #fff;
+        font-family: Monospace;
+        font-size: 13px;
+        text-align: center;
+        background-color: #000;
+        margin: 0px;
+        overflow: hidden;
+    }
+
+    #info {
+        position: absolute;
+        top: 0px;
+        width: 100%;
+        padding: 5px;
+    }
+
+    a {
+        color: #fff;
+    }
+</style>
+
+<script src="build/app.js"></script>
