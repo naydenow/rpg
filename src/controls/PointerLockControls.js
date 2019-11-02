@@ -4,7 +4,7 @@ import {
   Vector3
 } from "three";
 
-var PointerLockControls = function ( camera, domElement ) {
+var PointerLockControls = function ( camera, pinch, domElement ) {
 
   this.domElement = domElement || document.body;
   this.isLocked = false;
@@ -26,22 +26,27 @@ var PointerLockControls = function ( camera, domElement ) {
   var vec = new Vector3();
 
   function onMouseMove( event ) {
-
-    if ( scope.isLocked === false ) return;
+    if ( event.buttons !== 2 ) return;
 
     var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
     var movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
 
-    euler.setFromQuaternion( camera.quaternion );
+    //euler.setFromQuaternion( camera.quaternion );
 
     euler.y -= movementX * 0.002;
     euler.x -= movementY * 0.002;
 
-    euler.x = Math.max( - PI_2, Math.min( PI_2, euler.x ) );
+   // euler.x = Math.max( - PI_2, Math.min( PI_2, euler.x ) );
 
-    camera.quaternion.setFromEuler( euler );
+   // camera.quaternion.setFromEuler( euler );
+    pinch.rotation.y -= movementX * 0.008;
+    camera.rotation.x -= movementY * 0.008;
+    camera.rotation.x = Math.max( - PI_2, Math.min( PI_2, camera.rotation.x ) );
 
-    scope.dispatchEvent( changeEvent );
+    //camera.rotation.x -= movementY * 0.008;
+
+
+    // scope.dispatchEvent( changeEvent );
 
   }
 

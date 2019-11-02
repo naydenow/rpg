@@ -1,35 +1,50 @@
 import * as THREE from 'three';
+import {loadGLTF} from './../loaders';
 
 export default class Player {
-  constructor(controls, game, camera){
+    constructor(controls, game, camera) {
+        this.game = game;
+        this.controls = controls;
 
-    var geometry = new THREE.SphereBufferGeometry(5, 8, 8);
-    var material = new THREE.MeshBasicMaterial({color: 0xf00000, wireframe:true});
-
-    this.object = new THREE.Mesh(geometry, material);
-
-    game.scene.add(this.object);
-  }
-
-  up(d){
-
-  }
-
-  down(d){
-
-  }
-
-  left(d){
-
-  }
-
-  right(d){
-
-  }
+        this.object = new THREE.Object3D();
+        //this.object.position.y = -30;
+        this.controls.pinch.add(this.object);
 
 
 
-  update(delta){
+        this.init();
+    }
 
-  }
+    async init() {
+        const {model, actions} = await loadGLTF('models/soldier.glb', this.game);
+        model.scale.set(25, 25, 25);
+
+        this.object.add(model);
+
+        // actions.Run.enabled = true;
+        // actions.Run.setEffectiveTimeScale(1);
+        // actions.Run.setEffectiveWeight(100);
+        actions.Run.play()
+    }
+
+    up(d) {
+
+    }
+
+    down(d) {
+
+    }
+
+    left(d) {
+
+    }
+
+    right(d) {
+
+    }
+
+
+    update(delta) {
+
+    }
 }

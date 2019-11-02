@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import {ddsLoader, textureLoader} from '../loaders/index';
 import TerrainShader from './../shaders/terrain';
+import CollisionCreator from './collision.creater';
 
 const worldmap = 'test';
 
@@ -10,10 +11,16 @@ export default class Worls {
     this.host  = 'https://ww.sunnygames.net';
     this.cache = {};
 
+    this.cc = new CollisionCreator(this);
+
     this.initLigth();
 
     this.game.mapWorker.on('newGeometry', (data) => {
       this.createRegionTile(data);
+    });
+
+    this.game.mapWorker.on('regionChanged', (data) => {
+      this.region = data.region;
     });
 
     this.game.mapWorker.on('removeRegion', (region) => {
@@ -21,8 +28,6 @@ export default class Worls {
         return;
 
       this.game.scene.remove(this.cache[region].mesh);
-
-      console.log(region)
     });
   }
 
@@ -49,11 +54,11 @@ export default class Worls {
         t2:           {type: "t", value: t2},
         t3:           {type: "t", value: t3},
         t4:           {type: "t", value: t4},
-        repeat:       {type: 'f', value: 10.0},
+        repeat:       {type: 'f', value: 20.0},
       },
       vertexShader:   TerrainShader.vertexShader,
       fragmentShader: TerrainShader.fragmentShader,
-
+      side:THREE.DoubleSide // TODO -collision scan option
     };
 
 

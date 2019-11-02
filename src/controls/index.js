@@ -1,113 +1,84 @@
-import {MapControls} from './OrbitControls.js';
 import * as THREE from 'three';
 import Player from './player';
 import Keyboard from './keyboard';
-import {OrbitControls} from "./OrbitControls";
+import {PointerLockControls} from "./PointerLockControls";
+
+const emptyVector = new THREE.Vector3();
 
 export default class {
-  constructor(game, camera, domElement) {
-    this.game     = game;
-    this.keyboard = new Keyboard();
+    constructor(game, camera, domElement) {
+        this.game = game;
+        this.camera = camera;
+        this.keyboard = new Keyboard();
 
-    var geometry = new THREE.SphereBufferGeometry(5, 32, 32);
-    var material = new THREE.MeshBasicMaterial({color: 0xffff00});
+        this.center = new THREE.Object3D();
+        this.pinch = new THREE.Object3D();
+        this.center.add(this.camera);
+        this.pinch.add(this.center);
 
-    this.center = new THREE.Mesh(geometry, material);
+        this.camera.position.z = 300;
 
-    this.game.scene.add(this.center);
+        this.game.scene.add(this.pinch);
 
-    this._                    = new OrbitControls(camera, domElement);
-    // this._.enableDamping      = true; // an animation loop is required when either damping or auto-rotation are enabled
-    this._.dampingFactor      = 0.05;
-    this._.screenSpacePanning = false;
-    this._.minDistance        = 100;
-    this._.maxDistance        = 50000;
-    this._.maxPolarAngle      = Math.PI / 2;
+        this._ = new PointerLockControls(this.center, this.pinch, domElement);
 
-    this.moveForward  = false;
-    this.moveBackward = false;
-    this.moveLeft     = false;
-    this.moveRight    = false;
-    this.velocity = new THREE.Vector3();
-    this.direction = new THREE.Vector3();
-    this.vertex = new THREE.Vector3();
+        this.velocity = new THREE.Vector3();
+        this.direction = new THREE.Vector3();
 
-    this.player = new Player(this, this.game, camera);
+        this.player = new Player(this, this.game, camera);
 
-    this.game.mapWorker.emit('centerPosition', this.center.position.toArray());
-  }
+        this.game.mapWorker.emit('centerPosition', this.center.position.toArray());
+        this.game.mapWorker.on('regionChanged', (data) => {
+            this.game.controlsWorker.emit('onRegionChange', data);
+        });
 
-  update(delta) {
-    if (this.keyboard.pressed("W")) {
-      this.moveForward = true;
-      this.player.up()
-    } else {
-      this.moveForward = false;
+        this.game.controlsWorker.on('newPlayerPosition', data => {
+            this.pinch.position.fromArray(data);
+        });
+
+        this.keyboard.on('space', () => {
+            this.game.controlsWorker.emit('jump', {})
+        });
+
+        document.addEventListener("wheel", event => {
+            const delta = Math.sign(event.deltaY);
+            this.camera.position.z += delta*10;
+        });
     }
 
-    if (this.keyboard.pressed("S")) {
-      this.moveBackward = true;
-      this.player.down();
-    } else {
-      this.moveBackward = false;
+    update(delta) {
+        this.direction = this.pinch.getWorldDirection(emptyVector);
+        //this.direction.y = 0;
+
+        this.direction.normalize();
+
+        this.game.controlsWorker.emit('onControllUpdate', [
+            this.keyboard.pressed("W"),
+            this.keyboard.pressed("S"),
+            this.keyboard.pressed("A"),
+            this.keyboard.pressed("D"),
+            delta,
+            this.direction
+        ]);
+
+
+        // if (this.keyboard.pressed("W")) {
+        //     this.pinch.position.addScaledVector(this.direction, 4000.0 * delta);
+        // }
+        //
+        // if (this.keyboard.pressed("S")) {
+        //     this.pinch.position.addScaledVector(this.direction, 4000.0 * -delta);
+        // }
+
+        this.player.update(delta);
+
+        const p = this.pinch.position.clone();
+
+        if (this._oldCenterPosition)
+            if (p.x !== this._oldCenterPosition.x || p.y !== this._oldCenterPosition.y || p.z !== this._oldCenterPosition.z) {
+                this.game.mapWorker.emit('centerPosition', p.toArray());
+            }
+
+        this._oldCenterPosition = p;
     }
-
-    if (this.keyboard.pressed("D")) {
-      this.moveLeft = true;
-      this.player.left()
-    } else {
-      this.moveLeft = false;
-    }
-
-    if (this.keyboard.pressed("A")) {
-      this.moveRight = true;
-      this.player.right()
-    } else {
-      this.moveRight = false;
-    }
-
-    ////////////////////
-
-
-    this.velocity.x -= this.velocity.x * 10.0 * delta;
-    this.velocity.z -= this.velocity.z * 10.0 * delta;
-
-    // this.velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
-
-    this.direction.z = Number( this.moveForward ) - Number( this.moveBackward );
-    this.direction.x = Number( this.moveRight ) - Number( this.moveLeft );
-
-    this.direction.normalize(); // this ensures consistent movements in all directions
-
-    if ( this.moveForward || this.moveBackward )
-      this.velocity.z -= this.direction.z * 40.0 * delta;
-
-    if ( this.moveLeft || this.moveRight )
-      this.velocity.x -= this.direction.x * 40.0 * delta;
-
-    this.center.position.add(this.velocity);
-
-    // this._.moveRight( - this.velocity.x * delta );
-    // this._.moveForward( - this.velocity.z * delta );
-    // this._.getObject().position.y += ( this.velocity.y * delta ); // new behavior
-    ////////////////////
-
-
-
-    this.player.update(delta);
-
-    //this._.update();
-   // this.center.position.copy(this._.target);
-
-
-    const p = this._.target.clone();
-
-    if (this._oldCenterPosition)
-      if (p.x !== this._oldCenterPosition.x || p.y !== this._oldCenterPosition.y || p.z !== this._oldCenterPosition.z) {
-        this.game.mapWorker.emit('centerPosition', p.toArray());
-      }
-
-
-    this._oldCenterPosition = p;
-  }
 }

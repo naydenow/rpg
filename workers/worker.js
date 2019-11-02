@@ -40,8 +40,16 @@ Worker.prototype.emit = function (name, message) {
 };
 
 Worker.prototype.load = function load(url, callback) {
+    return fetch(url,{
+        method:'GET',
+        mode: 'cors'
+    }).then(res => res.text())
+        .then(text => callback(text));
+
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = ensureReadiness;
+
+
 
     function ensureReadiness() {
         if (xhr.readyState < 4) {
