@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "awesome-typescript-loader": "^3.2.1",
-    "three": "^0.109.0",
+    "three": "^0.125.0",
     "unfetch": "^3.0.0"
   }
 }
